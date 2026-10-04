@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Chronometrical Engine</title>
+</head>
+<body style="margin:0">
+<title>Chronometrical Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Oswald:wght@400;500;600&family=Special+Elite&display=swap">
+<style>
+/* ============================================================
+   CHRONOMETRICAL ENGINE No.1
+   A brass classroom chronometer. Single committed visual world
+   (blackened walnut + brass), so no light/dark swap by design.
+   Zero external JS. Runs offline once fonts are cached.
+   ============================================================ */
+
+:root{
+  --walnut:   #14100c;
+  --walnut-2: #1d1711;
+  --leather:  #2a1f16;
+  --leather-2:#3a2b1e;
+  --brass:    #c9963f;
+  --brass-hi: #f4dca0;
+  --brass-lo: #7c5a24;
+  --ivory:    #efe4cf;
+  --ivory-dim:#a9977c;
+  --patina:   #57a08a;
+  --ember:    #d9552a;
+  --rule: 1px solid rgba(201,150,63,.28);
+
+  --plate: linear-gradient(175deg,#3b2c1e 0%,#2a1f16 45%,#221812 100%);
+  --brassplate: linear-gradient(170deg,#e3c179 0%,#c9963f 38%,#8d6729 72%,#c9963f 100%);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+html{background:var(--walnut)}
+body{
+  margin:0;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 8%, #2b2018 0%, #17120d 55%, #0d0a07 100%);
+  color:var(--ivory);
+  font-family:"Oswald","Helvetica Neue",Arial,sans-serif;
+  font-weight:400;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* faint machined-metal noise over everything */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:60;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+  mix-blend-mode:overlay;
+}
+
+.engine{
+  height:100%;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto auto;
+  gap:clamp(6px,1.1vh,14px);
+  padding:clamp(8px,1.4vh,18px) clamp(16px,2.2vw,30px);
+  padding-top:calc(clamp(8px,1.4vh,18px) + env(safe-area-inset-top,0px));
+  padding-bottom:calc(clamp(8px,1.4vh,18px) + env(safe-area-inset-bottom,0px));
+}
+
+/* ---------- 1. Nameplate ---------- */
+.nameplate{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;
+  border-bottom:var(--rule);
+  padding-bottom:clamp(5px,.9vh,10px);
+}
+.maker{
+  font-family:"Cinzel",Georgia,serif;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  font-size:clamp(11px,1.45vh,16px);
+  color:var(--brass);
+  display:flex;align-items:center;gap:10px;
+}
+.maker .no{
+  color:var(--ivory-dim);font-family:"Oswald",sans-serif;font-weight:400;
+  letter-spacing:.24em;font-size:.82em;
+}
+.rivets{display:flex;gap:6px}
+.rivets i{
+  width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,var(--brass-hi),var(--brass-lo) 70%);
+  box-shadow:0 1px 1px rgba(0,0,0,.7);
+}
+.status-cluster{display:flex;align-items:center;gap:clamp(10px,1.6vw,20px)}
+.lamp{
+  display:flex;align-items:center;gap:7px;
+  font-size:clamp(9px,1.15vh,12px);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ivory-dim);
+}
+.lamp b{
+  width:11px;height:11px;border-radius:50%;
+  background:#2c231a;border:1px solid rgba(0,0,0,.6);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.8);
+  transition:background .25s, box-shadow .25s;
+}
+.lamp.on b{background:var(--patina);box-shadow:0 0 10px 1px rgba(87,160,138,.75),inset 0 0 3px rgba(255,255,255,.4)}
+.lamp.alarm b{background:var(--ember);box-shadow:0 0 12px 2px rgba(217,85,42,.8)}
+
+/* ---------- 2. Task plaque ---------- */
+.plaque{
+  position:relative;
+  background:var(--plate);
+  border:1px solid rgba(201,150,63,.4);
+  border-radius:3px;
+  box-shadow:inset 0 1px 0 rgba(244,220,160,.14), 0 3px 10px rgba(0,0,0,.5);
+  padding:clamp(6px,1.1vh,12px) clamp(40px,4vw,56px);
+  text-align:center;
+}
+.plaque::before,.plaque::after{
+  content:"";position:absolute;top:50%;transform:translateY(-50%);
+  width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,var(--brass-hi),var(--brass-lo) 70%);
+  box-shadow:0 1px 2px rgba(0,0,0,.8);
+}
+.plaque::before{left:clamp(14px,1.4vw,20px)}
+.plaque::after{right:clamp(14px,1.4vw,20px)}
+#task{
+  width:100%;background:transparent;border:0;outline:0;color:var(--ivory);
+  text-align:center;
+  font-family:"Cinzel",Georgia,serif;font-weight:500;
+  font-size:clamp(15px,3.1vh,34px);
+  letter-spacing:.055em;
+  text-transform:uppercase;
+}
+#task::placeholder{color:rgba(169,151,124,.5)}
+#task:focus{color:var(--brass-hi)}
+
+/* ---------- 3. Gauge ---------- */
+.stage{
+  position:relative;
+  display:grid;place-items:center;
+  min-height:0;
+}
+.dialwrap{
+  position:relative;
+  height:min(74vh,100%);
+  aspect-ratio:1;
+  width:auto;
+  max-width:88vw;
+  display:grid;place-items:center;
+}
+.dialwrap svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+
+.gearlayer{opacity:.3}
+.gear{transform-box:fill-box;transform-origin:center;animation:spin linear infinite;animation-play-state:paused}
+.engine.running .gear{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.needle{transform-box:fill-box;transform-origin:50% 88%;transition:transform .45s cubic-bezier(.34,.9,.36,1)}
+.arc{transition:stroke-dasharray .45s linear}
+
+/* readout sits in the dial well */
+.well{
+  position:relative;z-index:3;
+  display:flex;flex-direction:column;align-items:center;
+  gap:clamp(2px,.6vh,8px);
+}
+.mode-tag{
+  font-family:"Cinzel",Georgia,serif;font-weight:700;
+  font-size:clamp(9px,1.35vh,14px);letter-spacing:.34em;
+  color:var(--brass);text-transform:uppercase;
+  padding-left:.34em;
+}
+#readout{
+  display:flex;align-items:center;gap:clamp(1px,.25vw,4px);
+  font-weight:600;
+  font-size:min(13vh,15vw);
+  line-height:.92;
+  font-variant-numeric:tabular-nums;
+}
+.drum{
+  position:relative;overflow:hidden;
+  height:.92em;width:.60em;
+  border-radius:4px;
+  background:linear-gradient(180deg,#0b0906 0%,#241a12 18%,#2f2317 50%,#241a12 82%,#0b0906 100%);
+  box-shadow:inset 0 0 0 1px rgba(201,150,63,.3), inset 0 6px 12px rgba(0,0,0,.75), inset 0 -6px 12px rgba(0,0,0,.75);
+}
+.strip{
+  position:absolute;left:0;right:0;top:0;height:1000%;
+  display:flex;flex-direction:column;
+  transition:transform .19s cubic-bezier(.3,1.5,.5,1);
+  will-change:transform;
+}
+.strip span{
+  height:10%;display:grid;place-items:center;
+  color:var(--brass-hi);
+  text-shadow:0 0 14px rgba(244,220,160,.28), 0 2px 2px rgba(0,0,0,.9);
+}
+.colon{
+  color:var(--brass);width:.28em;text-align:center;
+  animation:blink 1s steps(1,end) infinite;animation-play-state:paused;
+  text-shadow:0 0 12px rgba(201,150,63,.4);
+}
+.engine.running .colon{animation-play-state:running}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.22}}
+
+.sub{
+  font-family:"Special Elite",Courier,monospace;
+  font-size:clamp(10px,1.5vh,15px);
+  letter-spacing:.1em;color:var(--ivory-dim);
+  min-height:1.3em;
+}
+
+/* alarm state */
+.engine.finished .dialwrap{animation:jolt .45s ease-in-out 6}
+@keyframes jolt{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}75%{transform:translate(3px,-2px)}}
+.flash{
+  position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at center,rgba(217,85,42,.55),rgba(217,85,42,.15) 70%,transparent);
+}
+.engine.finished ~ .flash{animation:flash 1s ease-in-out 8}
+@keyframes flash{0%,100%{opacity:0}50%{opacity:1}}
+
+/* ---------- 4. Control rail ---------- */
+.rail{
+  position:relative;z-index:5;
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(6px,.9vw,14px);flex-wrap:wrap;
+  background:linear-gradient(180deg,#2e2217 0%,#1c150f 100%);
+  border:1px solid rgba(201,150,63,.3);
+  border-radius:4px;
+  box-shadow:inset 0 1px 0 rgba(244,220,160,.12), 0 4px 14px rgba(0,0,0,.55);
+  padding:clamp(7px,1.1vh,12px) clamp(10px,1.4vw,18px);
+  transition:opacity .35s, transform .35s;
+}
+.engine.lean .rail,
+.engine.lean .nameplate{opacity:0;transform:translateY(8px);pointer-events:none}
+.engine.lean.peek .rail,
+.engine.lean.peek .nameplate{opacity:1;transform:none;pointer-events:auto}
+
+.group{display:flex;align-items:center;gap:clamp(4px,.5vw,7px)}
+.sep{width:1px;align-self:stretch;background:rgba(201,150,63,.26);margin:0 clamp(2px,.4vw,7px)}
+
+button{font-family:inherit;cursor:pointer}
+
+.knob{
+  appearance:none;border:1px solid rgba(201,150,63,.45);
+  background:linear-gradient(180deg,#453322 0%,#2b2016 100%);
+  color:var(--brass-hi);
+  font-size:clamp(11px,1.5vh,15px);font-weight:500;letter-spacing:.09em;
+  padding:clamp(5px,.85vh,9px) clamp(8px,1vw,14px);
+  border-radius:3px;
+  box-shadow:inset 0 1px 0 rgba(244,220,160,.2), 0 2px 4px rgba(0,0,0,.5);
+  transition:background .15s,color .15s,transform .07s,border-color .15s;
+  white-space:nowrap;
+}
+.knob:hover{background:linear-gradient(180deg,#54402b 0%,#33261a 100%);border-color:rgba(201,150,63,.75)}
+.knob:active{transform:translateY(1px);box-shadow:inset 0 2px 5px rgba(0,0,0,.7)}
+.knob:focus-visible{outline:2px solid var(--brass-hi);outline-offset:2px}
+.knob[aria-pressed="true"],.knob.hot{
+  background:var(--brassplate);color:#20160c;border-color:var(--brass-hi);
+  text-shadow:0 1px 0 rgba(255,255,255,.35);
+}
+.knob.lever{
+  font-family:"Cinzel",Georgia,serif;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;min-width:clamp(88px,9vw,128px);
+  padding-left:clamp(10px,1.2vw,18px);padding-right:clamp(10px,1.2vw,18px);
+}
+.knob.lever.go{background:linear-gradient(180deg,#5c8f7e 0%,#2f5a4c 100%);border-color:#7fc3ac;color:#f2fbf7}
+.knob.lever.go:hover{background:linear-gradient(180deg,#6da393 0%,#376a5a 100%)}
+.knob.lever.hold{background:linear-gradient(180deg,#c9963f 0%,#8d6729 100%);border-color:var(--brass-hi);color:#20160c}
+.rail-label{
+  font-family:"Cinzel",Georgia,serif;font-size:clamp(8px,1.05vh,11px);
+  letter-spacing:.24em;color:var(--ivory-dim);text-transform:uppercase;
+  padding-right:2px;
+}
+#custom{
+  width:clamp(50px,4.4vw,64px);
+  appearance:none;-moz-appearance:textfield;
+  background:#171108;border:1px solid rgba(201,150,63,.45);border-radius:3px;
+  color:var(--brass-hi);font-family:"Oswald",sans-serif;font-size:clamp(11px,1.5vh,15px);
+  padding:clamp(5px,.85vh,9px) 6px;text-align:center;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.7);
+}
+#custom::-webkit-outer-spin-button,#custom::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#custom:focus{outline:none;border-color:var(--brass-hi)}
+
+/* ---------- 5. Telegraph ticker ---------- */
+.telegraph{
+  position:relative;overflow:hidden;
+  border-top:var(--rule);border-bottom:var(--rule);
+  background:linear-gradient(180deg,rgba(43,32,22,.85),rgba(20,16,12,.85));
+  padding:clamp(4px,.75vh,8px) 0;
+}
+.telegraph .badge{
+  position:absolute;left:0;top:0;bottom:0;z-index:2;
+  display:flex;align-items:center;padding:0 clamp(8px,1vw,14px);
+  background:var(--brassplate);color:#20160c;
+  font-family:"Cinzel",Georgia,serif;font-weight:700;
+  font-size:clamp(8px,1.05vh,11px);letter-spacing:.2em;
+  box-shadow:4px 0 12px rgba(0,0,0,.6);
+}
+.tape{
+  display:flex;width:max-content;
+  font-family:"Special Elite",Courier,monospace;
+  font-size:clamp(11px,1.6vh,16px);color:var(--ivory-dim);
+  animation:tape 200s linear infinite;
+}
+.tape span{padding:0 2.6rem;white-space:nowrap}
+.tape span::before{content:"✦";color:var(--brass);padding-right:2.6rem}
+@keyframes tape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.engine.noticker .telegraph{display:none}
+
+/* ---------- COG the automaton ---------- */
+#cog{
+  position:fixed;right:clamp(10px,2vw,32px);
+  bottom:calc(-280px - env(safe-area-inset-bottom,0px));
+  z-index:50;
+  display:flex;align-items:flex-end;gap:10px;
+  transition:bottom .62s cubic-bezier(.2,1.5,.4,1);
+  pointer-events:none;
+}
+#cog.up{bottom:calc(clamp(96px,17vh,180px) + env(safe-area-inset-bottom,0px))}
+.placard{
+  max-width:min(46ch,44vw);
+  background:var(--plate);
+  border:1px solid rgba(201,150,63,.5);border-radius:3px;
+  box-shadow:0 6px 22px rgba(0,0,0,.65), inset 0 1px 0 rgba(244,220,160,.16);
+  padding:clamp(8px,1.2vh,13px) clamp(12px,1.4vw,18px);
+  font-family:"Special Elite",Courier,monospace;
+  font-size:clamp(11px,1.6vh,16px);line-height:1.45;color:var(--ivory);
+  position:relative;
+}
+.placard::after{
+  content:"";position:absolute;right:-7px;bottom:22px;
+  width:12px;height:12px;background:#2a1f16;
+  border-right:1px solid rgba(201,150,63,.5);border-bottom:1px solid rgba(201,150,63,.5);
+  transform:rotate(-45deg);
+}
+.placard .who{
+  display:block;font-family:"Cinzel",Georgia,serif;font-weight:700;
+  font-size:.72em;letter-spacing:.2em;color:var(--brass);margin-bottom:3px;
+}
+#cogArt{width:clamp(74px,8.5vw,112px);height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.7))}
+.earL,.earR{transform-box:fill-box;transform-origin:center;animation:spin 5.5s linear infinite}
+.earR{animation-direction:reverse}
+.iris{animation:iris 3.4s ease-in-out infinite}
+@keyframes iris{0%,88%,100%{r:9}93%{r:2.5}}
+.puff{animation:puff 3.2s ease-out infinite;transform-box:fill-box;transform-origin:center bottom}
+@keyframes puff{0%{opacity:0;transform:translateY(0) scale(.5)}25%{opacity:.55}100%{opacity:0;transform:translateY(-26px) scale(1.7)}}
+
+/* ---------- misc ---------- */
+.hint{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:45;
+  font-family:"Special Elite",Courier,monospace;font-size:11px;letter-spacing:.06em;
+  color:rgba(169,151,124,.5);pointer-events:none;
+  transition:opacity .4s;
+}
+.engine.running ~ .hint{opacity:0}
+
+@media (max-width:640px){
+  .rail{gap:6px;padding:8px}
+  .knob{font-size:12px;padding:6px 8px}
+  .rail-label{display:none}
+  .sep{display:none}
+  #cog{right:6px}
+  .placard{max-width:56vw}
+  .dialwrap{width:min(58vh,92vw)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+
+<div class="engine" id="engine">
+
+  <!-- 1 ─── nameplate ─────────────────────────────────────── -->
+  <header class="nameplate">
+    <div class="maker">
+      <span class="rivets"><i></i><i></i></span>
+      Chronometrical Engine
+      <span class="no">№ 1 · Gateway to Technology</span>
+    </div>
+    <div class="status-cluster">
+      <span class="lamp" id="lampRun"><b></b>Running</span>
+      <span class="lamp" id="lampBell"><b></b>Bell</span>
+      <button class="knob" id="btnSound" aria-pressed="true" title="Mute or unmute the bell">🔔 Sound</button>
+      <button class="knob" id="btnTicker" aria-pressed="true" title="Hide the ticker (T)">☰ Ticker</button>
+      <button class="knob" id="btnFull" title="Full screen (F)">⛶ Full</button>
+      <button class="knob" id="btnLean" aria-pressed="false" title="Hide the controls for wall display (H)">▣ Display</button>
+    </div>
+  </header>
+
+  <!-- 2 ─── task plaque ───────────────────────────────────── -->
+  <div class="plaque">
+    <input id="task" maxlength="64" placeholder="Click and type today's task"
+           aria-label="What the class is working on" autocomplete="off" spellcheck="false">
+  </div>
+
+  <!-- 3 ─── the gauge ─────────────────────────────────────── -->
+  <main class="stage">
+    <div class="dialwrap">
+      <svg viewBox="0 0 400 400" aria-hidden="true">
+        <defs>
+          <radialGradient id="face" cx="50%" cy="38%" r="72%">
+            <stop offset="0%"  stop-color="#332618"/>
+            <stop offset="62%" stop-color="#1e160f"/>
+            <stop offset="100%" stop-color="#100c08"/>
+          </radialGradient>
+          <linearGradient id="bezel" x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0%"  stop-color="#f4dca0"/>
+            <stop offset="28%" stop-color="#c9963f"/>
+            <stop offset="58%" stop-color="#6d4e1f"/>
+            <stop offset="80%" stop-color="#c9963f"/>
+            <stop offset="100%" stop-color="#8d6729"/>
+          </linearGradient>
+          <linearGradient id="needleG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#8d6729"/>
+            <stop offset="50%" stop-color="#f4dca0"/>
+            <stop offset="100%" stop-color="#8d6729"/>
+          </linearGradient>
+        </defs>
+
+        <circle cx="200" cy="200" r="192" fill="none" stroke="url(#bezel)" stroke-width="15"/>
+        <circle cx="200" cy="200" r="181" fill="url(#face)" stroke="rgba(0,0,0,.6)" stroke-width="2"/>
+
+        <!-- the movement, turning behind the dial glass -->
+        <g class="gearlayer" id="gears" clip-path="circle(181px at 200px 200px)"></g>
+
+        <!-- track + remaining arc, 270° with the gap at the bottom -->
+        <g transform="rotate(135 200 200)">
+          <circle cx="200" cy="200" r="163" fill="none" stroke="rgba(201,150,63,.14)"
+                  stroke-width="13" stroke-linecap="round" pathLength="100"
+                  stroke-dasharray="75 100"/>
+          <circle id="arc" class="arc" cx="200" cy="200" r="163" fill="none" stroke="#c9963f"
+                  stroke-width="13" stroke-linecap="round" pathLength="100"
+                  stroke-dasharray="75 100"/>
+        </g>
+
+        <g id="ticks"></g>
+
+        <g id="needle" class="needle">
+          <path d="M200 48 L205.5 196 L200 214 L194.5 196 Z" fill="url(#needleG)"/>
+          <circle cx="200" cy="200" r="15" fill="url(#bezel)"/>
+          <circle cx="200" cy="200" r="6"  fill="#1a130c"/>
+        </g>
+      </svg>
+
+      <div class="well">
+        <div class="mode-tag" id="modeTag">Countdown</div>
+        <div id="readout" role="timer" aria-live="off"></div>
+        <div class="sub" id="sub"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 4 ─── control rail ──────────────────────────────────── -->
+  <nav class="rail" id="rail">
+    <div class="group">
+      <span class="rail-label">Set</span>
+      <button class="knob preset" data-min="1">1</button>
+      <button class="knob preset" data-min="2">2</button>
+      <button class="knob preset" data-min="3">3</button>
+      <button class="knob preset" data-min="5">5</button>
+      <button class="knob preset" data-min="10">10</button>
+      <button class="knob preset" data-min="15">15</button>
+      <button class="knob preset" data-min="20">20</button>
+      <button class="knob preset" data-min="30">30</button>
+      <input id="custom" type="number" min="1" max="600" step="1" placeholder="min"
+             aria-label="Custom minutes">
+    </div>
+
+    <span class="sep"></span>
+
+    <div class="group">
+      <button class="knob lever go" id="btnGo">Start</button>
+      <button class="knob lever" id="btnReset" title="Reset (R)">Reset</button>
+      <button class="knob" id="btnPlus" title="Add one minute">+1 min</button>
+    </div>
+
+    <span class="sep"></span>
+
+    <div class="group">
+      <span class="rail-label">Mode</span>
+      <button class="knob mode hot" data-mode="timer">Countdown</button>
+      <button class="knob mode" data-mode="stopwatch">Stopwatch</button>
+      <button class="knob mode" data-mode="interval">Work / Break</button>
+    </div>
+
+    <span class="sep"></span>
+
+    <button class="knob" id="btnCog" title="Ask COG for a fact">⚙ COG</button>
+  </nav>
+
+  <!-- 5 ─── telegraph ─────────────────────────────────────── -->
+  <footer class="telegraph">
+    <span class="badge">Telegraph</span>
+    <div class="tape" id="tape"></div>
+  </footer>
+</div>
+
+<div class="flash"></div>
+
+<div class="hint" id="hint">Space start / pause · R reset · 1-9 set minutes · ↑↓ adjust · C ask COG · T ticker · F full screen · H display mode</div>
+
+<!-- COG, the shop automaton -->
+<div id="cog">
+  <div class="placard"><span class="who">COG</span><span id="cogText"></span></div>
+  <svg id="cogArt" viewBox="0 0 120 150" aria-hidden="true">
+    <defs>
+      <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f4dca0"/><stop offset="45%" stop-color="#c9963f"/>
+        <stop offset="100%" stop-color="#7c5a24"/>
+      </linearGradient>
+      <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d8ab55"/><stop offset="100%" stop-color="#6b4c1e"/>
+      </linearGradient>
+    </defs>
+
+    <!-- steam -->
+    <circle class="puff" cx="60" cy="16" r="6" fill="#efe4cf" opacity=".5"/>
+
+    <!-- stovepipe hat + vent -->
+    <rect x="34" y="18" width="52" height="26" rx="3" fill="url(#bg2)"/>
+    <rect x="34" y="36" width="52" height="7" fill="#57a08a" opacity=".85"/>
+    <rect x="26" y="43" width="68" height="7" rx="3.5" fill="url(#bg1)"/>
+    <rect x="54" y="8"  width="12" height="12" rx="2" fill="#7c5a24"/>
+    <rect x="51" y="6"  width="18" height="5"  rx="2.5" fill="url(#bg1)"/>
+
+    <!-- ear gears -->
+    <g class="earL"><circle cx="20" cy="76" r="11" fill="url(#bg2)"/>
+      <circle cx="20" cy="76" r="4" fill="#1a130c"/>
+      <rect x="18" y="61" width="4" height="30" fill="url(#bg2)"/>
+      <rect x="5" y="74" width="30" height="4" fill="url(#bg2)"/>
+      <rect x="9.5" y="65.5" width="4" height="21" fill="url(#bg2)" transform="rotate(-45 20 76)"/>
+      <rect x="9.5" y="65.5" width="4" height="21" fill="url(#bg2)" transform="rotate(45 20 76)"/>
+    </g>
+    <g class="earR"><circle cx="100" cy="76" r="11" fill="url(#bg2)"/>
+      <circle cx="100" cy="76" r="4" fill="#1a130c"/>
+      <rect x="98" y="61" width="4" height="30" fill="url(#bg2)"/>
+      <rect x="85" y="74" width="30" height="4" fill="url(#bg2)"/>
+      <rect x="89.5" y="65.5" width="4" height="21" fill="url(#bg2)" transform="rotate(-45 100 76)"/>
+      <rect x="89.5" y="65.5" width="4" height="21" fill="url(#bg2)" transform="rotate(45 100 76)"/>
+    </g>
+
+    <!-- head plate -->
+    <rect x="28" y="50" width="64" height="58" rx="11" fill="url(#bg1)" stroke="#5e4318" stroke-width="1.5"/>
+    <circle cx="35" cy="57" r="2.4" fill="#5e4318"/><circle cx="85" cy="57" r="2.4" fill="#5e4318"/>
+    <circle cx="35" cy="101" r="2.4" fill="#5e4318"/><circle cx="85" cy="101" r="2.4" fill="#5e4318"/>
+
+    <!-- monocle eye -->
+    <circle cx="49" cy="74" r="15" fill="#1a130c" stroke="url(#bg2)" stroke-width="3.5"/>
+    <circle class="iris" cx="49" cy="74" r="9" fill="#57a08a"/>
+    <circle cx="45" cy="70" r="3" fill="#efe4cf" opacity=".75"/>
+    <!-- small eye -->
+    <circle cx="76" cy="74" r="7.5" fill="#1a130c" stroke="url(#bg2)" stroke-width="2.5"/>
+    <circle cx="76" cy="74" r="3" fill="#d9552a"/>
+
+    <!-- speaker grille mouth -->
+    <rect x="44" y="92" width="32" height="3" rx="1.5" fill="#5e4318"/>
+    <rect x="44" y="97" width="32" height="3" rx="1.5" fill="#5e4318"/>
+
+    <!-- coil neck + shoulders -->
+    <path d="M52 108 q8 5 16 0 M52 114 q8 5 16 0 M52 120 q8 5 16 0" stroke="url(#bg2)" stroke-width="4" fill="none"/>
+    <rect x="24" y="126" width="72" height="24" rx="8" fill="url(#bg2)"/>
+    <rect x="52" y="132" width="16" height="10" rx="2" fill="#57a08a" opacity=".8"/>
+  </svg>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ══════════════ shop floor: elements ══════════════ */
+const $ = function(id){ return document.getElementById(id); };
+const engine   = $("engine");
+const readout  = $("readout");
+const arc      = $("arc");
+const needle   = $("needle");
+const subline  = $("sub");
+const modeTag  = $("modeTag");
+const btnGo    = $("btnGo");
+const taskIn   = $("task");
+const cogBox   = $("cog");
+const cogText  = $("cogText");
+
+/* ══════════════ the boiler: state ══════════════ */
+let mode      = "timer";     // timer | stopwatch | interval
+let setSec    = 300;         // what the dial is set to
+let leftMs    = 300000;      // milliseconds remaining (or elapsed, in stopwatch)
+let running   = false;
+let endAt     = 0;           // wall-clock target, so tab-throttling can't drift us
+let raf       = 0;
+let soundOn   = true;
+let finished  = false;
+let wakeLock  = null;
+
+// Work/Break
+let ivWork = 20*60, ivBreak = 5*60, ivPhase = "work", ivRound = 1;
+
+/* ══════════════ the pressure gauge ══════════════ */
+function drawTicks(){
+  const g = $("ticks"), parts = [];
+  // 50 graduations across the 270° sweep; every tenth is a labelled major.
+  // The scale reads percent of the set time still in the boiler.
+  for(let i=0;i<=50;i++){
+    const major = i % 10 === 0;
+    const a = (-135 + (270*i/50)) * Math.PI/180;   // 0° = straight up
+    const r1 = 152, r2 = major ? 135 : 144;
+    const sx = 200 + Math.sin(a)*r1, sy = 200 - Math.cos(a)*r1;
+    const ex = 200 + Math.sin(a)*r2, ey = 200 - Math.cos(a)*r2;
+    parts.push('<line x1="'+sx.toFixed(1)+'" y1="'+sy.toFixed(1)+'" x2="'+ex.toFixed(1)+
+      '" y2="'+ey.toFixed(1)+'" stroke="'+(major?"#f4dca0":"rgba(201,150,63,.5)")+
+      '" stroke-width="'+(major?3:1.5)+'" stroke-linecap="round"/>');
+    if(major){
+      const lx = 200 + Math.sin(a)*117, ly = 200 - Math.cos(a)*117;
+      parts.push('<text x="'+lx.toFixed(1)+'" y="'+(ly+5).toFixed(1)+'" fill="#a9977c" '+
+        'font-family="Cinzel,Georgia,serif" font-size="14" font-weight="700" text-anchor="middle">'+
+        (i*2) +'</text>');
+    }
+  }
+  g.innerHTML = parts.join("");
+}
+
+function gearPath(cx,cy,rRoot,rTip,teeth){
+  const step = Math.PI*2/teeth, tip = step*0.21, root = step*0.30;
+  let d = "";
+  for(let i=0;i<teeth;i++){
+    const a = i*step;
+    [[a-root,rRoot],[a-tip,rTip],[a+tip,rTip],[a+root,rRoot]].forEach(function(p,j){
+      const x = cx + Math.cos(p[0])*p[1], y = cy + Math.sin(p[0])*p[1];
+      d += (d===""?"M":"L") + x.toFixed(1) + " " + y.toFixed(1);
+    });
+  }
+  return d + "Z";
+}
+
+function drawGears(){
+  const specs = [
+    {x: 82, y: 118, rr:44, rt:57, t:15, dur:26, dir:1},
+    {x:322, y: 108, rr:32, rt:43, t:11, dur:18, dir:-1},
+    {x:296, y:308,  rr:38, rt:50, t:13, dur:22, dir:1},
+    {x: 96, y:306,  rr:26, rt:35, t:9,  dur:13, dir:-1}
+  ];
+  $("gears").innerHTML = specs.map(function(s){
+    return '<g class="gear" style="animation-duration:'+s.dur+'s;animation-direction:'+
+      (s.dir>0?"normal":"reverse")+'">'+
+      '<path d="'+gearPath(s.x,s.y,s.rr,s.rt,s.t)+'" fill="#6d4e1f" stroke="#c9963f" stroke-width="1.2"/>'+
+      '<circle cx="'+s.x+'" cy="'+s.y+'" r="'+(s.rr*0.32)+'" fill="#17120d" stroke="#c9963f" stroke-width="1.5"/>'+
+      '</g>';
+  }).join("");
+}
+
+/* ══════════════ the readout drums ══════════════ */
+let drumShape = "";
+function setReadout(str){
+  // Rebuild the drum bank only when the shape changes (MM:SS -> H:MM:SS).
+  const shape = str.replace(/\d/g,"#");
+  if(shape !== drumShape){
+    drumShape = shape;
+    readout.innerHTML = str.split("").map(function(ch){
+      if(ch === ":") return '<span class="colon">:</span>';
+      return '<span class="drum"><span class="strip">' +
+        "0123456789".split("").map(function(d){return "<span>"+d+"</span>";}).join("") +
+        '</span></span>';
+    }).join("");
+  }
+  const strips = readout.querySelectorAll(".strip");
+  let k = 0;
+  for(let i=0;i<str.length;i++){
+    const ch = str[i];
+    if(ch === ":") continue;
+    strips[k].style.transform = "translateY(-" + (+ch * 10) + "%)";
+    k++;
+  }
+  document.title = str + " · Chronometrical Engine";
+}
+
+function fmt(totalSec){
+  totalSec = Math.max(0, Math.ceil(totalSec));
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = totalSec%60;
+  const p = function(n){ return n<10 ? "0"+n : ""+n; };
+  return h > 0 ? h + ":" + p(m) + ":" + p(s) : p(m) + ":" + p(s);
+}
+
+/* ══════════════ paint ══════════════ */
+function paint(){
+  let sec, frac;
+  if(mode === "stopwatch"){
+    sec  = leftMs/1000;
+    frac = (sec % 60) / 60;              // needle sweeps once per minute
+  }else{
+    sec  = leftMs/1000;
+    const total = (mode === "interval") ? (ivPhase === "work" ? ivWork : ivBreak) : setSec;
+    frac = total > 0 ? Math.max(0, Math.min(1, sec/total)) : 0;
+  }
+  setReadout(fmt(sec));
+  arc.setAttribute("stroke-dasharray", (75*frac).toFixed(2) + " 100");
+  needle.style.transform = "rotate(" + (-135 + 270*frac).toFixed(2) + "deg)";
+
+  // the arc runs down through brass to ember at the end
+  arc.setAttribute("stroke", frac > 0.34 ? "#c9963f" : (frac > 0.12 ? "#d98b3f" : "#d9552a"));
+
+  $("lampRun").classList.toggle("on", running);
+  $("lampBell").classList.toggle("alarm", finished);
+  engine.classList.toggle("running", running);
+}
+
+function updateSub(){
+  if(mode === "interval"){
+    subline.textContent = (ivPhase === "work" ? "Work block" : "Break") +
+      " · round " + ivRound + " · " + Math.round(ivWork/60) + " on / " + Math.round(ivBreak/60) + " off";
+  }else if(mode === "stopwatch"){
+    subline.textContent = running ? "Counting up" : (leftMs > 0 ? "Held" : "Ready");
+  }else{
+    subline.textContent = finished ? "Time" : (running ? "" : "Set for " + Math.round(setSec/60) + " minutes");
+  }
+}
+
+/* ══════════════ the escapement: the loop ══════════════ */
+function tick(){
+  if(!running) return;
+  const now = Date.now();
+  if(mode === "stopwatch"){
+    leftMs = now - endAt;
+  }else{
+    leftMs = endAt - now;
+    if(leftMs <= 0){
+      leftMs = 0;
+      if(mode === "interval"){ paint(); nextPhase(); return; }
+      paint(); ring(); return;
+    }
+    milestone(leftMs/1000);
+  }
+  paint();
+  raf = requestAnimationFrame(tick);
+}
+
+function start(){
+  if(running) return;
+  if(mode !== "stopwatch" && leftMs <= 0) reset();
+  finished = false;
+  engine.classList.remove("finished");
+  audioWake();
+  endAt = (mode === "stopwatch") ? Date.now() - leftMs : Date.now() + leftMs;
+  running = true;
+  btnGo.textContent = "Pause";
+  btnGo.classList.remove("go"); btnGo.classList.add("hold");
+  askWakeLock();
+  updateSub(); paint();
+  raf = requestAnimationFrame(tick);
+}
+
+function pause(){
+  if(!running) return;
+  running = false;
+  cancelAnimationFrame(raf);
+  btnGo.textContent = "Resume";
+  btnGo.classList.remove("hold"); btnGo.classList.add("go");
+  releaseWakeLock();
+  updateSub(); paint();
+}
+
+function reset(){
+  running = false; finished = false;
+  cancelAnimationFrame(raf);
+  engine.classList.remove("finished");
+  if(mode === "stopwatch"){ leftMs = 0; }
+  else if(mode === "interval"){ ivPhase = "work"; ivRound = 1; leftMs = ivWork*1000; }
+  else { leftMs = setSec*1000; }
+  btnGo.textContent = "Start";
+  btnGo.classList.remove("hold"); btnGo.classList.add("go");
+  said.clear();
+  releaseWakeLock();
+  updateSub(); paint();
+}
+
+function setMinutes(min){
+  setSec = Math.max(1, Math.min(600, Math.round(min))) * 60;
+  if(mode !== "timer"){ setMode("timer"); }
+  running = false; finished = false;
+  cancelAnimationFrame(raf);
+  engine.classList.remove("finished");
+  leftMs = setSec*1000;
+  said.clear();
+  btnGo.textContent = "Start";
+  btnGo.classList.remove("hold"); btnGo.classList.add("go");
+  document.querySelectorAll(".preset").forEach(function(b){
+    b.classList.toggle("hot", +b.dataset.min === setSec/60);
+  });
+  save(); updateSub(); paint();
+}
+
+function nextPhase(){
+  chime(ivPhase === "work" ? "break" : "work");
+  if(ivPhase === "work"){ ivPhase = "break"; leftMs = ivBreak*1000; }
+  else { ivPhase = "work"; ivRound++; leftMs = ivWork*1000; }
+  endAt = Date.now() + leftMs;
+  said.clear();
+  speak(ivPhase === "break"
+    ? "Break time — " + Math.round(ivBreak/60) + " minutes. Stand up, stretch, hydrate."
+    : "Back to it. Round " + ivRound + ". Pick up where your notes left off.");
+  updateSub();
+  raf = requestAnimationFrame(tick);
+}
+
+function ring(){
+  running = false; finished = true;
+  cancelAnimationFrame(raf);
+  engine.classList.add("finished");
+  btnGo.textContent = "Start";
+  btnGo.classList.remove("hold"); btnGo.classList.add("go");
+  releaseWakeLock();
+  chime("bell");
+  speak("Time! Pencils down, hands off the kits, eyes up here.");
+  updateSub(); paint();
+  setTimeout(function(){ engine.classList.remove("finished"); paint(); }, 9000);
+}
+
+/* ══════════════ milestones ══════════════ */
+const said = new Set();
+function milestone(sec){
+  const marks = [600, 300, 120, 60, 30, 10];
+  for(let i=0;i<marks.length;i++){
+    const m = marks[i];
+    if(sec <= m && sec > m-1 && !said.has(m) && setSec > m){
+      said.add(m);
+      if(m >= 60) speak(warnings(m));
+      else if(m === 30) speak("Thirty seconds. Start closing out.");
+      else if(m === 10) speak("Ten seconds. Tools down.");
+      if(soundOn && m <= 60) blip();
+    }
+  }
+}
+function warnings(m){
+  const mins = m/60;
+  const lines = [
+    mins + (mins===1?" minute":" minutes") + " left. Check your work against the criteria.",
+    mins + (mins===1?" minute":" minutes") + " left — start wrapping up and log your data.",
+    mins + (mins===1?" minute":" minutes") + " remaining. Anything you'd redesign, write it down now.",
+    mins + (mins===1?" minute":" minutes") + " on the clock. Clean-up counts toward the grade."
+  ];
+  return lines[Math.floor(Math.random()*lines.length)];
+}
+
+/* ══════════════ the whistle: WebAudio, no files ══════════════ */
+let ac = null;
+function audioWake(){
+  try{
+    if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if(ac.state === "suspended") ac.resume();
+  }catch(e){ ac = null; }
+}
+function strike(t, freq, gain, dur, type){
+  if(!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || "triangle";
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(gain, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+function chime(kind){
+  if(!soundOn) return;
+  audioWake(); if(!ac) return;
+  const t0 = ac.currentTime + 0.02;
+  if(kind === "bell"){
+    // three strikes of a brass bell: fundamental + inharmonic partials
+    for(let n=0;n<3;n++){
+      const t = t0 + n*0.62;
+      strike(t, 523.25, 0.34, 2.6, "triangle");
+      strike(t, 784.00, 0.16, 2.0, "sine");
+      strike(t, 1318.5, 0.09, 1.4, "sine");
+      strike(t, 261.63, 0.12, 2.8, "sine");
+    }
+    hiss(t0 + 1.9, 1.4);
+  }else if(kind === "break"){
+    strike(t0, 659.25, 0.22, .9); strike(t0+0.16, 880, 0.2, 1.1);
+  }else{
+    strike(t0, 880, 0.2, .8); strike(t0+0.16, 659.25, 0.22, 1.0);
+  }
+}
+function blip(){
+  audioWake(); if(!ac || !soundOn) return;
+  strike(ac.currentTime + 0.01, 1046.5, 0.07, 0.14, "sine");
+}
+function hiss(t, dur){
+  if(!ac) return;
+  const n = Math.floor(ac.sampleRate * dur);
+  const buf = ac.createBuffer(1, n, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i] = (Math.random()*2-1) * (1 - i/n);
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = 0.8;
+  const g = ac.createGain(); g.gain.setValueAtTime(0.16, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f); f.connect(g); g.connect(ac.destination);
+  src.start(t); src.stop(t + dur);
+}
+
+/* ══════════════ screen wake lock ══════════════ */
+function askWakeLock(){
+  try{
+    if("wakeLock" in navigator && !wakeLock){
+      navigator.wakeLock.request("screen").then(function(w){ wakeLock = w; }).catch(function(){});
+    }
+  }catch(e){}
+}
+function releaseWakeLock(){
+  try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
+}
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState === "visible" && running) askWakeLock();
+});
+
+/* ══════════════ COG, the shop automaton ══════════════ */
+let cogTimer = 0, cogHide = 0;
+function speak(msg){
+  clearTimeout(cogHide);
+  cogText.textContent = msg;
+  cogBox.classList.add("up");
+  cogHide = setTimeout(function(){ cogBox.classList.remove("up"); }, 9000);
+}
+function cogFact(){
+  speak(FACTS[Math.floor(Math.random()*FACTS.length)]);
+}
+function cogLoop(){
+  clearInterval(cogTimer);
+  cogTimer = setInterval(function(){
+    if(running && !cogBox.classList.contains("up")) cogFact();
+  }, 105000);
+}
+
+/* ══════════════ the telegraph tape ══════════════ */
+const FACTS = [
+  "A Raspberry Pi Pico runs two processor cores at 133 MHz — and costs less than a school lunch.",
+  "The first computer bug was an actual moth, taped into a Harvard Mark II logbook in 1947.",
+  "A servo knows where it is because a tiny potentiometer inside reports the horn's angle back to the controller.",
+  "Steel is about 1,000 times stiffer than rubber, but rubber can stretch 500% before it tears. Stiff and strong are different properties.",
+  "The Wright brothers built a wind tunnel in their bike shop and tested over 200 wing shapes before Kitty Hawk.",
+  "Every color on this screen is made from three subpixels: red, green, blue. Hold a magnifier to it and you'll see them.",
+  "An Arduino UNO has 2 KB of RAM. The Apollo Guidance Computer had 4 KB. We landed on the Moon with less memory than a modern doorbell.",
+  "A 3D printer nozzle is usually 0.4 mm across — roughly four human hairs side by side.",
+  "Bridges are designed to move. The Golden Gate roadway can swing about 27 feet sideways in high wind.",
+  "Hydraulic systems multiply force because liquids barely compress. Pascal figured this out in 1653.",
+  "A gear train that steps 1:4 trades three quarters of your speed for four times the torque. You never get both.",
+  "The 'Design Process' is a loop on purpose. Engineers expect version 1 to fail — that's data, not defeat.",
+  "GPS satellites run atomic clocks that tick slower in orbit. Without a relativity correction, your map would drift 6 miles a day.",
+  "The QWERTY layout was arranged in the 1870s partly to keep typebars from jamming. We still use it out of habit.",
+  "A binary byte holds 256 values. Two bytes hold 65,536. Doubling gets out of hand fast.",
+  "Kevlar was invented in 1965 by Stephanie Kwolek, who almost threw the batch away because it looked cloudy and wrong.",
+  "Airplane wings generate lift mostly by turning air downward. Newton's third law does more of the work than the textbook picture suggests.",
+  "A lever's mechanical advantage is just the ratio of the two arm lengths. Archimedes was not exaggerating much.",
+  "The International Space Station orbits at about 17,500 mph — one lap every 90 minutes, 16 sunrises a day.",
+  "Solder melts near 360 °F. Your soldering iron tip runs near 700 °F. Respect the difference.",
+  "Ohm's Law, V = I × R, is three letters that explain most of what goes wrong in a circuit.",
+  "An LED is a diode: hook it up backwards and it simply refuses to glow. That's a feature, not a fault.",
+  "Concrete is strong in compression and weak in tension, which is why we run steel rebar through it.",
+  "The first programmable loom, Jacquard's in 1804, used punched cards — the same idea that ran computers 150 years later.",
+  "Grace Hopper coined 'compiler' and argued machines should take instructions in something close to English. She was right.",
+  "A geodesic dome gets stronger as it gets bigger, because the load spreads over more triangles.",
+  "A single lightning bolt carries roughly 1 billion joules — enough to run a 100 W bulb for four months.",
+  "Robots in factories are usually blind. They repeat a taught path exactly, which is why safety cages exist.",
+  "The Pythagorean theorem is how a CNC machine knows how far it just moved diagonally.",
+  "Titanium is as strong as steel at 45% of the weight, and that's the entire reason it costs what it does.",
+  "Wi-Fi is radio. Your router is a very chatty, very short-range radio station in the 2.4 and 5 GHz bands.",
+  "A tension member can be a cable. A compression member cannot — push on a rope and see what happens.",
+  "An accelerometer measures acceleration, not tilt. It infers tilt from the direction gravity is pulling. Clever trick.",
+  "The Eiffel Tower grows about 6 inches taller in summer. Metal expands when heated — every design must allow for it.",
+  "Binary search finds a name in a million-entry list in 20 steps. Reading straight through takes 500,000 on average.",
+  "Velcro was invented after an engineer pulled burrs off his dog and put them under a microscope.",
+  "A stepper motor moves in fixed steps — often 1.8° — so it can hit an exact position without any sensor at all.",
+  "Bones are stronger than concrete by weight, and they repair themselves. Materials engineers are still jealous.",
+  "The 'green' in green architecture is mostly boring: insulation, orientation, and shade. Solar panels come later.",
+  "A pull-up resistor exists so a pin is never left guessing between HIGH and LOW. Floating inputs read pure noise.",
+  "Aluminum was once more valuable than gold. Napoleon III served his best guests on aluminum plates.",
+  "Sound travels about 4 times faster in water than in air, which is why whales can call across an ocean basin.",
+  "A truss is just triangles, because a triangle is the only polygon that can't change shape without changing a side length.",
+  "The first email was sent in 1971. The programmer who sent it doesn't remember what it said.",
+  "Debugging is twice as hard as writing the code. So if you write code as cleverly as possible, you can't debug it. (Kernighan's Law.)",
+  "A microscope and a telescope are the same idea pointed at different problems: bend light so the eye can resolve it.",
+  "PLA melts around 200 °C and warps in a hot car. ABS survives the car but stinks while printing. Every material trades something.",
+  "The human eye can distinguish about 10 million colors, but only around 30 shades of gray in a single scene.",
+  "Prototyping in cardboard first is not lazy. It is the cheapest way to find out your idea doesn't fit.",
+  "A hard drive head flies about 3 nanometers above the platter — proportionally like a 747 cruising 1 mm off the runway.",
+  "Fingerprints, DNA, and blood spatter all rely on the same idea: every event leaves a physical record if you know how to read it.",
+  "Rube Goldberg was a trained engineer. The joke only works because he understood how machines actually chain together.",
+  "The 'Curie point' is the temperature where a magnet forgets it's a magnet. For iron, that's 770 °C.",
+  "Your phone's processor has billions of transistors. Each one is a switch. That's all a computer is: switches, arranged carefully."
+];
+
+const REMINDERS = [
+  "Safety glasses on before any tool comes out of the drawer.",
+  "Photograph your prototype before you take it apart. Future-you needs the evidence.",
+  "Write the measurement down now. You will not remember it in ten minutes.",
+  "Stuck? State the problem out loud in one sentence. Half the time that solves it.",
+  "Label your parts bin before the bell. Nobody wants a mystery drawer.",
+  "Check your design against the criteria and constraints, not against what looks cool.",
+  "If it failed, that's a data point. Write down what you'd change and why.",
+  "Sketch before you build. Paper is the cheapest material in this room.",
+  "Charge the robot batteries before you leave — next period will thank you."
+];
+
+function buildTape(){
+  const picks = FACTS.slice().sort(function(){ return Math.random()-0.5; }).slice(0, 14);
+  const html = picks.map(function(f){ return "<span>"+f+"</span>"; }).join("");
+  $("tape").innerHTML = html + html;      // doubled so the -50% loop is seamless
+}
+
+/* ══════════════ modes ══════════════ */
+function setMode(m){
+  mode = m;
+  running = false; finished = false;
+  cancelAnimationFrame(raf);
+  engine.classList.remove("finished");
+  said.clear();
+  document.querySelectorAll(".mode").forEach(function(b){
+    b.classList.toggle("hot", b.dataset.mode === m);
+  });
+  if(m === "stopwatch"){ modeTag.textContent = "Stopwatch"; leftMs = 0; }
+  else if(m === "interval"){ modeTag.textContent = "Work / Break"; ivPhase = "work"; ivRound = 1; leftMs = ivWork*1000; }
+  else { modeTag.textContent = "Countdown"; leftMs = setSec*1000; }
+  btnGo.textContent = "Start";
+  btnGo.classList.remove("hold"); btnGo.classList.add("go");
+  save(); updateSub(); paint();
+}
+
+/* ══════════════ remembering, quietly ══════════════ */
+function save(){
+  try{
+    localStorage.setItem("chrono", JSON.stringify({
+      setSec: setSec, mode: mode, task: taskIn.value, sound: soundOn,
+      noticker: engine.classList.contains("noticker")
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem("chrono");
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(s.setSec) setSec = s.setSec;
+    if(s.task) taskIn.value = s.task;
+    if(typeof s.sound === "boolean") soundOn = s.sound;
+    if(s.noticker) engine.classList.add("noticker");
+  }catch(e){}
+}
+
+/* ══════════════ the levers ══════════════ */
+document.querySelectorAll(".preset").forEach(function(b){
+  b.addEventListener("click", function(){ setMinutes(+b.dataset.min); });
+});
+document.querySelectorAll(".mode").forEach(function(b){
+  b.addEventListener("click", function(){ setMode(b.dataset.mode); });
+});
+$("custom").addEventListener("change", function(){
+  const v = parseInt(this.value, 10);
+  if(v > 0) setMinutes(v);
+  this.blur();
+});
+btnGo.addEventListener("click", function(){ running ? pause() : start(); });
+$("btnReset").addEventListener("click", reset);
+function bump(deltaMin){
+  if(mode === "stopwatch") return;
+  const d = deltaMin * 60000;
+  if(leftMs + d < 0 && d < 0) return;
+  leftMs = Math.max(0, leftMs + d);
+  if(mode === "timer") setSec = Math.max(60, setSec + deltaMin*60);
+  if(running) endAt += d;
+  said.clear();
+  document.querySelectorAll(".preset").forEach(function(b){
+    b.classList.toggle("hot", +b.dataset.min === setSec/60);
+  });
+  save(); updateSub(); paint();
+}
+$("btnPlus").addEventListener("click", function(){ bump(1); });
+$("btnCog").addEventListener("click", function(){
+  audioWake();
+  speak(Math.random() < 0.65
+    ? FACTS[Math.floor(Math.random()*FACTS.length)]
+    : REMINDERS[Math.floor(Math.random()*REMINDERS.length)]);
+});
+$("btnSound").addEventListener("click", function(){
+  soundOn = !soundOn;
+  this.setAttribute("aria-pressed", String(soundOn));
+  this.textContent = soundOn ? "🔔 Sound" : "🔕 Muted";
+  if(soundOn){ audioWake(); blip(); }
+  save();
+});
+$("btnFull").addEventListener("click", function(){
+  if(document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(function(){});
+});
+$("btnLean").addEventListener("click", function(){
+  const on = !engine.classList.contains("lean");
+  engine.classList.toggle("lean", on);
+  this.setAttribute("aria-pressed", String(on));
+});
+$("btnTicker").addEventListener("click", function(){
+  const off = engine.classList.toggle("noticker");
+  this.setAttribute("aria-pressed", String(!off));
+  save();
+});
+taskIn.addEventListener("input", save);
+
+let peekT = 0;
+document.addEventListener("mousemove", function(){
+  if(!engine.classList.contains("lean")) return;
+  engine.classList.add("peek");
+  clearTimeout(peekT);
+  peekT = setTimeout(function(){ engine.classList.remove("peek"); }, 2600);
+});
+
+document.addEventListener("keydown", function(e){
+  if(e.target === taskIn || e.target === $("custom")) return;
+  const k = e.key;
+  if(k === " "){ e.preventDefault(); running ? pause() : start(); }
+  else if(k === "r" || k === "R"){ reset(); }
+  else if(k === "f" || k === "F"){ $("btnFull").click(); }
+  else if(k === "h" || k === "H"){ $("btnLean").click(); }
+  else if(k === "c" || k === "C"){ $("btnCog").click(); }
+  else if(k === "t" || k === "T"){ $("btnTicker").click(); }
+  else if(k === "ArrowUp"){ e.preventDefault(); bump(1); }
+  else if(k === "ArrowDown"){ e.preventDefault(); bump(-1); }
+  else if(k >= "1" && k <= "9"){ setMinutes(+k); }
+});
+
+/* ══════════════ fire it up ══════════════ */
+drawTicks();
+drawGears();
+buildTape();
+load();
+$("btnSound").setAttribute("aria-pressed", String(soundOn));
+$("btnSound").textContent = soundOn ? "🔔 Sound" : "🔕 Muted";
+$("btnTicker").setAttribute("aria-pressed", String(!engine.classList.contains("noticker")));
+document.querySelectorAll(".preset").forEach(function(b){
+  b.classList.toggle("hot", +b.dataset.min === setSec/60);
+});
+leftMs = setSec*1000;
+updateSub();
+paint();
+cogLoop();
+setTimeout(function(){ speak("Engine primed. Set a time, pull the lever, and I'll keep the shop honest."); }, 900);
+
+})();
+</script>
+
+</body>
+</html>
